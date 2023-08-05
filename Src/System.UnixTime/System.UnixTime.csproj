@@ -7,7 +7,35 @@
     <Version>2.0.0</Version>
     <FileVersion>2.0.0</FileVersion>
     <AssemblyVersion>2.0.0</AssemblyVersion>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <PackageId>unixtime </PackageId>
+	  <Title>UnixTime</Title>
+	  <Description>This library provides a System.UnixTime as a new Type providing conversion between Unix Time and .NET DateTime.</Description>
+	  <PackageTags>unix;timestamp;epoch;time</PackageTags>
+	  <Authors>Daniel M. Porrey</Authors>
+	  <Company>Daniel M. Porrey</Company>
+	  <Product>UnixTime</Product>
+	  <PackageProjectUrl>https://github.com/porrey/UnixTime</PackageProjectUrl>
+	  <RepositoryUrl>https://github.com/porrey/UnixTime.git</RepositoryUrl>
+	  <RepositoryType>git</RepositoryType>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  <IncludeSymbols>True</IncludeSymbols>
+	  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
+	  <PackageIcon>Unix-Time-Stamp.png</PackageIcon>
+	  <Copyright>Copyright © Daniel Porrey 2014-2023. All Rights Reserved.</Copyright>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Assets\Unix-Time-Stamp.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
