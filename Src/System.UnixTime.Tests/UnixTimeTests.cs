@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace System.Tests
 {
-	[TestFixture]
+    [TestFixture]
 	public class UnixTimeTests
 	{
 		public static Random Rnd { get; } = new();
@@ -323,8 +323,8 @@ namespace System.Tests
 
 			Assert.Multiple(() =>
 			{
-				Assert.IsTrue(target1 >= target2);
-				Assert.IsTrue(target1 >= target3);
+				Assert2.IsTrue(target1 >= target2);
+				Assert2.IsTrue(target1 >= target3);
 			});
 		}
 		#endregion

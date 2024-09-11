@@ -4,9 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <Version>8.0.0</Version>
-    <FileVersion>8.0.0</FileVersion>
-    <AssemblyVersion>8.0.0</AssemblyVersion>
+    <Version>8.0.1</Version>
+    <FileVersion>8.0.1</FileVersion>
+    <AssemblyVersion>8.0.1</AssemblyVersion>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <PackageId>unixtime </PackageId>
 	  <Title>UnixTime</Title>
