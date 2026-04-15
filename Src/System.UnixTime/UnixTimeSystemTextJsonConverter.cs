@@ -43,7 +43,12 @@ namespace System
 
 			if (reader.TokenType == JsonTokenType.String)
 			{
-				string s = reader.GetString() ?? string.Empty;
+				string s = reader.GetString();
+
+				if (s is null)
+				{
+					throw new JsonException("Cannot convert a null JSON string value to UnixTime.");
+				}
 
 				if (UnixTime.TryParse(s, out UnixTime result))
 				{
