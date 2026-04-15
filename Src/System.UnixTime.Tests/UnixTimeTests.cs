@@ -1,5 +1,5 @@
 ﻿//
-// Copyright(C) 2014-2025, Daniel M. Porrey. All rights reserved.
+// Copyright(C) 2014-2026, Daniel M. Porrey. All rights reserved.
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published
@@ -15,6 +15,7 @@
 // along with this program. If not, see http://www.gnu.org/licenses/.
 //
 using System.Globalization;
+using System.Text.Json;
 using NUnit.Framework;
 
 namespace System.Tests
@@ -54,7 +55,8 @@ namespace System.Tests
 		[TestCaseSource(nameof(Items))]
 		public void IntConstructorTest(TestDataItem data)
 		{
-			UnixTime target = new(data.UnixTimestampInt);
+			// Cast explicitly to int so the int overload is exercised, not the long overload.
+			UnixTime target = new((int)data.UnixTimestampInt);
 			Assert.That(target.DateTime.ToUniversalTime(), Is.EqualTo(data.DateTime));
 		}
 
@@ -106,7 +108,7 @@ namespace System.Tests
 		[TestCaseSource(nameof(Items))]
 		public void DoubleToUnixTimeTest(TestDataItem data)
 		{
-			UnixTime target = data.UnixTimestampDouble;
+			UnixTime target = new(data.UnixTimestampDouble);
 			Assert.That(target.Timestamp, Is.EqualTo(data.UnixTimestampDouble));
 		}
 
@@ -122,7 +124,7 @@ namespace System.Tests
 		[TestCaseSource(nameof(Items))]
 		public void LongToUnixTimeTest(TestDataItem data)
 		{
-			UnixTime target = data.UnixTimestampLong;
+			UnixTime target = new(data.UnixTimestampLong);
 			Assert.That((long)target.Timestamp, Is.EqualTo(data.UnixTimestampLong));
 		}
 
@@ -159,13 +161,31 @@ namespace System.Tests
 		}
 		#endregion
 
+		#region Explicit Conversion Tests
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void ExplicitDoubleToUnixTimeTest(TestDataItem data)
+		{
+			UnixTime target = (UnixTime)data.UnixTimestampDouble;
+			Assert.That(target.Timestamp, Is.EqualTo(data.UnixTimestampDouble));
+		}
+
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void ExplicitLongToUnixTimeTest(TestDataItem data)
+		{
+			UnixTime target = (UnixTime)data.UnixTimestampLong;
+			Assert.That((long)target.Timestamp, Is.EqualTo(data.UnixTimestampLong));
+		}
+		#endregion
+
 		#region Public Override Tests
 		[Test]
 		[TestCaseSource(nameof(Items))]
 		public void ToStringUnixTimeTest(TestDataItem data)
 		{
 			UnixTime target = new(data.UnixTimestampDouble);
-			Assert.That(target.ToString(), Is.EqualTo(data.UnixTimestampDouble.ToString()));
+			Assert.That(target.ToString(), Is.EqualTo(data.UnixTimestampDouble.ToString(System.Globalization.CultureInfo.InvariantCulture)));
 		}
 
 		[Test]
@@ -214,8 +234,22 @@ namespace System.Tests
 		[TestCaseSource(nameof(Items))]
 		public void FromDateTimeUnixTimeTest(TestDataItem data)
 		{
-			UnixTime target = UnixTime.FromDateTime(data.DateTime);
-			Assert.That(data.UnixTimestampDouble, Is.EqualTo(target.Timestamp));
+			long timestamp = UnixTime.FromDateTime(data.DateTime);
+			Assert.That(data.UnixTimestampDouble, Is.EqualTo(timestamp));
+		}
+
+		[Test]
+		public void FromDateTimeUnspecifiedKindThrowsTest()
+		{
+			DateTime unspecified = new(2024, 1, 15, 0, 0, 0); // Kind == Unspecified
+			Assert.That(() => UnixTime.FromDateTime(unspecified), Throws.TypeOf<ArgumentException>());
+		}
+
+		[Test]
+		public void DateTimeConstructorUnspecifiedKindThrowsTest()
+		{
+			DateTime unspecified = new(2024, 1, 15, 0, 0, 0); // Kind == Unspecified
+			Assert.That(() => new UnixTime(unspecified), Throws.TypeOf<ArgumentException>());
 		}
 
 		[Test]
@@ -345,6 +379,52 @@ namespace System.Tests
 		}
 		#endregion
 
+		#region UnixTime/Numeric Operator Tests
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void AdditionOperatorUnixTimeLongOffsetTest(TestDataItem data)
+		{
+			UnixTime target = new(data.UnixTimestampDouble);
+			long offset = Rnd.Next(1, 5000000);
+			UnixTime result = target + offset;
+
+			Assert.That(result.Timestamp, Is.EqualTo(data.UnixTimestampDouble + offset));
+		}
+
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void SubtractionOperatorUnixTimeLongOffsetTest(TestDataItem data)
+		{
+			UnixTime target = new(data.UnixTimestampDouble);
+			long offset = Rnd.Next(1, 5000000);
+			UnixTime result = target - offset;
+
+			Assert.That(result.Timestamp, Is.EqualTo(data.UnixTimestampDouble - offset));
+		}
+
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void AdditionOperatorUnixTimeDoubleOffsetTest(TestDataItem data)
+		{
+			UnixTime target = new(data.UnixTimestampDouble);
+			double offset = Rnd.Next(1, 5000000) + 0.5;
+			UnixTime result = target + offset;
+
+			Assert.That(result.Timestamp, Is.EqualTo(data.UnixTimestampDouble + offset).Within(1e-9));
+		}
+
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void SubtractionOperatorUnixTimeDoubleOffsetTest(TestDataItem data)
+		{
+			UnixTime target = new(data.UnixTimestampDouble);
+			double offset = Rnd.Next(1, 5000000) + 0.5;
+			UnixTime result = target - offset;
+
+			Assert.That(result.Timestamp, Is.EqualTo(data.UnixTimestampDouble - offset).Within(1e-9));
+		}
+		#endregion
+
 		#region UnixTime/TimeSpan Operator Tests
 		[Test]
 		[TestCaseSource(nameof(Items))]
@@ -446,7 +526,7 @@ namespace System.Tests
 		{
 			TimeSpan target1 = TimeSpan.FromSeconds(data.UnixTimestampDouble);
 			double value = Rnd.Next(1, 5000000);
-			UnixTime target2 = target1.TotalSeconds + value;
+			UnixTime target2 = new UnixTime(target1.TotalSeconds) + value;
 
 			Assert.That(target1.TotalSeconds + value == target2.Timestamp, Is.True);
 		}
@@ -457,7 +537,7 @@ namespace System.Tests
 		{
 			TimeSpan target1 = TimeSpan.FromSeconds(data.UnixTimestampDouble);
 			double value = Rnd.Next(1, 5000000);
-			UnixTime target2 = target1.TotalSeconds - value;
+			UnixTime target2 = new UnixTime(target1.TotalSeconds) - value;
 
 			Assert.That(target1.TotalSeconds - value == target2.Timestamp, Is.True);
 		}
@@ -618,6 +698,328 @@ namespace System.Tests
 			UnixTime target2 = new(data.DateTime);
 
 			Assert.That(target1, Is.Not.EqualTo(target2));
+		}
+		#endregion
+
+		#region Static Boundary Property Tests
+		[Test]
+		public void ZeroPropertyTest()
+		{
+			Assert.That(UnixTime.Zero.Timestamp, Is.EqualTo(0D));
+		}
+
+		[Test]
+		public void MinValuePropertyTest()
+		{
+			Assert.That(UnixTime.MinValue.DateTimeUtc, Is.EqualTo(new DateTime(DateTime.MinValue.Ticks, DateTimeKind.Utc)));
+		}
+
+		[Test]
+		public void MaxValuePropertyTest()
+		{
+			// DateTime.MaxValue sub-second precision is lost through integer-second conversion; verify the
+			// timestamp is within 1 second of the expected boundary rather than round-tripping via DateTimeUtc.
+			double expectedSeconds = (new DateTime(DateTime.MaxValue.Ticks, DateTimeKind.Utc) - UnixTime.Epoch).TotalSeconds;
+			Assert.That(UnixTime.MaxValue.Timestamp, Is.EqualTo(expectedSeconds).Within(1));
+		}
+
+		[Test]
+		public void MinValueLessThanMaxValueTest()
+		{
+			Assert.That(UnixTime.MinValue < UnixTime.MaxValue, Is.True);
+		}
+
+		[Test]
+		public void ZeroBetweenMinAndMaxTest()
+		{
+			Assert.Multiple(() =>
+			{
+				Assert.That(UnixTime.Zero > UnixTime.MinValue, Is.True);
+				Assert.That(UnixTime.Zero < UnixTime.MaxValue, Is.True);
+			});
+		}
+		#endregion
+
+		#region ISpanFormattable Tests
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void TryFormatNoFormatTest(TestDataItem data)
+		{
+			UnixTime target = new(data.UnixTimestampDouble);
+			Span<char> buffer = stackalloc char[64];
+			bool success = target.TryFormat(buffer, out int charsWritten, default, null);
+
+			Assert.That(success, Is.True);
+			Assert.That(double.Parse(buffer[..charsWritten].ToString(), CultureInfo.InvariantCulture), Is.EqualTo(data.UnixTimestampDouble).Within(1e-9));
+		}
+
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void TryFormatWithFormatTest(TestDataItem data)
+		{
+			UnixTime target = new(data.UnixTimestampDouble);
+			Span<char> buffer = stackalloc char[128];
+			ReadOnlySpan<char> format = "o".AsSpan();
+			CultureInfo culture = CultureInfo.InvariantCulture;
+			bool success = target.TryFormat(buffer, out int charsWritten, format, culture);
+
+			Assert.That(success, Is.True);
+			Assert.That(buffer[..charsWritten].ToString(), Is.EqualTo(target.DateTime.ToString("o", culture)));
+		}
+
+		[Test]
+		public void TryFormatBufferTooSmallTest()
+		{
+			UnixTime target = new(1_700_000_000D);
+			Span<char> tinyBuffer = stackalloc char[2];
+
+			bool success = target.TryFormat(tinyBuffer, out _, default, null);
+
+			Assert.That(success, Is.False);
+		}
+		#endregion
+
+		#region TryParse with IFormatProvider Tests
+		[Test]
+		public void TryParseWithProviderNumericTest()
+		{
+			string s = "1700000000";
+			bool success = UnixTime.TryParse(s, CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+			});
+		}
+
+		[Test]
+		public void TryParseWithProviderDateStringTest()
+		{
+			string s = "2023-11-14T22:13:20Z";
+			bool success = UnixTime.TryParse(s, CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D).Within(1));
+			});
+		}
+
+		[Test]
+		public void TryParseWithProviderInvalidTest()
+		{
+			bool success = UnixTime.TryParse("not-a-time", CultureInfo.InvariantCulture, out _);
+			Assert.That(success, Is.False);
+		}
+		#endregion
+
+		#region IParsable<UnixTime> Tests
+		[Test]
+		public void IParsableParseNumericTest()
+		{
+			UnixTime result = UnixTime.Parse("1700000000", CultureInfo.InvariantCulture);
+
+			Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+		}
+
+		[Test]
+		public void IParsableTryParseNumericTest()
+		{
+			bool success = UnixTime.TryParse("1700000000", CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+			});
+		}
+
+		[Test]
+		public void IParsableTryParseInvalidTest()
+		{
+			bool success = UnixTime.TryParse("not-a-time", CultureInfo.InvariantCulture, out _);
+			Assert.That(success, Is.False);
+		}
+		#endregion
+
+		#region ISpanParsable<UnixTime> Tests
+		[Test]
+		public void ISpanParsableTryParseNumericTest()
+		{
+			bool success = UnixTime.TryParse("1700000000".AsSpan(), CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+			});
+		}
+
+		[Test]
+		public void ISpanParsableTryParseDateStringTest()
+		{
+			bool success = UnixTime.TryParse("2023-11-14T22:13:20Z".AsSpan(), CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D).Within(1));
+			});
+		}
+
+		[Test]
+		public void ISpanParsableTryParseInvalidTest()
+		{
+			bool success = UnixTime.TryParse("not-a-time".AsSpan(), null, out _);
+			Assert.That(success, Is.False);
+		}
+
+		[Test]
+		public void ISpanParsableParseThrowsOnInvalidTest()
+		{
+			Assert.That(() => UnixTime.Parse("not-a-time".AsSpan(), null), Throws.TypeOf<FormatException>());
+		}
+		#endregion
+
+		#region Parse FormatException Message Test
+		[Test]
+		public void ParseThrowsDescriptiveFormatExceptionTest()
+		{
+			string badInput = "definitely-not-parseable-xyz";
+			FormatException ex = Assert.Throws<FormatException>(() => UnixTime.Parse(badInput));
+			Assert.That(ex.Message, Does.Contain(badInput));
+		}
+		#endregion
+
+		#region UnixTimeSystemTextJsonConverter Tests
+		[Test]
+		public void SystemTextJsonConverterWritesNumberTest()
+		{
+			UnixTime value = new(1_700_000_000D);
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			string json = JsonSerializer.Serialize(value, options);
+
+			Assert.That(json, Is.EqualTo("1700000000"));
+		}
+
+		[Test]
+		public void SystemTextJsonConverterReadsNumberTest()
+		{
+			string json = "1700000000";
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			UnixTime result = JsonSerializer.Deserialize<UnixTime>(json, options);
+
+			Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+		}
+
+		[Test]
+		public void SystemTextJsonConverterReadsStringTest()
+		{
+			string json = "\"2023-11-14T22:13:20Z\"";
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			UnixTime result = JsonSerializer.Deserialize<UnixTime>(json, options);
+
+			Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D).Within(1));
+		}
+
+		[Test]
+		public void SystemTextJsonConverterRoundTripTest()
+		{
+			UnixTime original = new(1_700_000_000D);
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			string json = JsonSerializer.Serialize(original, options);
+			UnixTime deserialized = JsonSerializer.Deserialize<UnixTime>(json, options);
+
+			Assert.That(deserialized.Timestamp, Is.EqualTo(original.Timestamp));
+		}
+
+		[Test]
+		public void SystemTextJsonConverterThrowsOnInvalidStringTest()
+		{
+			string json = "\"not-a-unixtime-xyz\"";
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			Assert.That(() => JsonSerializer.Deserialize<UnixTime>(json, options), Throws.TypeOf<JsonException>());
+		}
+
+		[Test]
+		public void SystemTextJsonConverterThrowsOnBooleanTokenTest()
+		{
+			string json = "true";
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			Assert.That(() => JsonSerializer.Deserialize<UnixTime>(json, options), Throws.TypeOf<JsonException>());
+		}
+		#endregion
+
+		#region TryParse Parse Order Tests
+		[Test]
+		public void TryParseNumericStringParsesAsDoubleNotDateTest()
+		{
+			// "1700000000" is a valid integer; with numeric-first ordering it parses as
+			// a Unix timestamp (seconds since epoch), NOT as a DateTime year.
+			bool success = UnixTime.TryParse("1700000000", out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+			});
+		}
+
+		[Test]
+		public void TryParseIsoDateStringParsesAsDateTimeTest()
+		{
+			// ISO date string cannot be parsed as double, so falls through to DateTime.
+			bool success = UnixTime.TryParse("2023-11-14T22:13:20Z", out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D).Within(1));
+			});
+		}
+
+		[Test]
+		public void TryParseTimeSpanStringParsesAsTimeSpanTest()
+		{
+			// TimeSpan string (d.hh:mm:ss) cannot be parsed as double or DateTime,
+			// so falls through to TimeSpan.
+			bool success = UnixTime.TryParse("1.00:00:00", out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				// 1 day = 86400 seconds
+				Assert.That(result.Timestamp, Is.EqualTo(86400D).Within(1));
+			});
+		}
+
+		[Test]
+		public void ToStringRoundTripsViaInvariantCultureTest()
+		{
+			UnixTime original = new(1_700_000_000.5);
+			string serialized = original.ToString();
+
+			// Parse back - should succeed because ToString uses invariant culture
+			bool success = UnixTime.TryParse(serialized, out UnixTime parsed);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(parsed.Timestamp, Is.EqualTo(original.Timestamp).Within(1e-9));
+			});
 		}
 		#endregion
 	}

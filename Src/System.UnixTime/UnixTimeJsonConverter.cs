@@ -1,5 +1,5 @@
 ﻿//
-// Copyright(C) 2014-2025, Daniel M. Porrey. All rights reserved.
+// Copyright(C) 2014-2026, Daniel M. Porrey. All rights reserved.
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published
@@ -19,8 +19,7 @@ using Newtonsoft.Json;
 namespace System
 {
 	/// <summary>
-	/// Handles conversion of the Time object when using the 
-	/// Newtonsoft.Json library.
+	/// Handles JSON serialization and deserialization of System.UnixTime values when using Newtonsoft.Json.
 	/// </summary>
 	public class UnixTimeJsonConverter : JsonConverter
 	{
@@ -35,7 +34,10 @@ namespace System
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether this System.UnixTimeJsonConverter can read JSON.
+		/// Reads a JSON value and converts it to a System.UnixTime instance.
+		/// If Newtonsoft.Json has pre-parsed the value as a System.DateTime (its default
+		/// DateParseHandling behaviour), it is converted directly; otherwise the raw string
+		/// is parsed via <see cref="UnixTime.Parse(string)"/>.
 		/// </summary>
 		/// <param name="reader">The Newtonsoft.Json.JsonReader to read from.</param>
 		/// <param name="objectType">Type of the object.</param>
@@ -48,7 +50,22 @@ namespace System
 
 			if (objectType == typeof(UnixTime))
 			{
-				returnValue = UnixTime.Parse((string)reader.Value);
+				// Newtonsoft.Json may have already parsed an ISO date string into a DateTime
+				// (its default DateParseHandling.DateTime behaviour). Handle that case directly
+				// so that timezone information is preserved.
+				if (reader.Value is DateTime dt)
+				{
+					// If Kind is Unspecified (e.g. the string had no timezone designator),
+					// treat it as UTC to stay consistent with the rest of the library.
+					DateTime utcDt = dt.Kind == DateTimeKind.Unspecified
+						? DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+						: dt;
+					returnValue = new UnixTime(utcDt);
+				}
+				else
+				{
+					returnValue = UnixTime.Parse(Convert.ToString(reader.Value));
+				}
 			}
 
 			return returnValue;

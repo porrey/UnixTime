@@ -1,5 +1,5 @@
 ﻿//
-// Copyright(C) 2014-2025, Daniel M. Porrey. All rights reserved.
+// Copyright(C) 2014-2026, Daniel M. Porrey. All rights reserved.
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published
@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program. If not, see http://www.gnu.org/licenses/.
 //
-#if NET20 || NET35 || NET40 || NET45 || NET451
 using System.ComponentModel;
 using System.Globalization;
 
@@ -83,4 +82,3 @@ namespace System
 		}
 	}
 }
-#endif

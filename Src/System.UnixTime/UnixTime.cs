@@ -1,5 +1,5 @@
 ﻿//
-// Copyright(C) 2014-2025, Daniel M. Porrey. All rights reserved.
+// Copyright(C) 2014-2026, Daniel M. Porrey. All rights reserved.
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published
@@ -14,78 +14,57 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program. If not, see http://www.gnu.org/licenses/.
 //
+using System.ComponentModel;
+using System.Globalization;
+
 namespace System
 {
 	/// <summary>
-	/// Unix time is simply a count of seconds that have elapsed since 
-	/// January 1 1970, 00:00:00 UTC (the Unix Epoch), 
+	/// Represents a Unix timestamp: the number of seconds elapsed since the Unix Epoch
+	/// (January 1, 1970, 00:00:00 UTC).
 	/// </summary>
-#if NET20 || NET35 || NET40 || NET45 || NET451
-	[Serializable]
 	[TypeConverter(typeof(UnixTimeTypeConverter))]
-	public struct UnixTime : IComparable, IFormattable, IConvertible, ISerializable, IComparable<UnixTime>, IEquatable<UnixTime>
-#else
-	public struct UnixTime : IComparable, IFormattable, IComparable<UnixTime>, IEquatable<UnixTime>
-#endif
+	public struct UnixTime : IComparable, IFormattable, ISpanFormattable, IConvertible, IComparable<UnixTime>, IEquatable<UnixTime>, ISpanParsable<UnixTime>
 	{
 		private double _timestamp;
 
-		private static class MagicValues
-		{
-			public const string PropertyName = "Timestamp";
-		}
-
 		#region Constructors
 		/// <summary>
-		/// Creates an instance of System.UnixTime from the Unix
-		/// timestamp value.
+		/// Creates an instance of System.UnixTime from a Unix timestamp.
 		/// </summary>
-		/// <param name="timestamp">A 64-bit integer representing a Unix Time.</param>
+		/// <param name="timestamp">A 64-bit integer representing a Unix timestamp.</param>
 		public UnixTime(long timestamp)
 		{
 			this._timestamp = timestamp;
 		}
 
 		/// <summary>
-		/// Creates an instance of System.UnixTime from the Unix
-		/// timestamp value.
+		/// Creates an instance of System.UnixTime from a Unix timestamp.
 		/// </summary>
-		/// <param name="timestamp">A 32-bit integer representing a Unix Time.</param>
+		/// <param name="timestamp">A 32-bit integer representing a Unix timestamp.</param>
 		public UnixTime(int timestamp)
 		{
 			this._timestamp = timestamp;
 		}
 
 		/// <summary>
-		/// Creates an instance of System.UnixTime from the Unix timestamp value.
+		/// Creates an instance of System.UnixTime from a Unix timestamp.
 		/// </summary>
-		/// <param name="timestamp">A double-precision floating-point number representing a Unix Time.</param>
+		/// <param name="timestamp">A double-precision floating-point number representing a Unix timestamp.</param>
 		public UnixTime(double timestamp)
 		{
 			this._timestamp = timestamp;
 		}
 
 		/// <summary>
-		/// Creates an instance of System.UnixTime from the System.DateTime
-		/// instance.
+		/// Creates an instance of System.UnixTime from the specified System.DateTime value.
 		/// </summary>
-		/// <param name="datetime">An instance of System.DateTime.</param>
+		/// <param name="datetime">The System.DateTime value to convert.</param>
 		public UnixTime(DateTime datetime)
 		{
 			this._timestamp = UnixTime.FromDateTime(datetime);
 		}
 
-#if NET20 || NET35 || NET40 || NET45 || NET451
-		/// <summary>
-		/// Constructs an instance of System.UnixTime from serialized information.
-		/// </summary>
-		/// <param name="info"></param>
-		/// <param name="context"></param>
-		public UnixTime(SerializationInfo info, StreamingContext context)
-		{
-			_timestamp = (double)info.GetValue(MagicValues.PropertyName, typeof(string));
-		}
-#endif
 		#endregion
 
 		#region Public Members
@@ -117,8 +96,7 @@ namespace System
 		}
 
 		/// <summary>
-		/// Gets a UTC System.DateTime time represented by this
-		/// Unix Time value.
+		/// Gets a System.DateTime in UTC represented by this Unix Time value.
 		/// </summary>
 		public DateTime DateTimeUtc
 		{
@@ -131,7 +109,7 @@ namespace System
 
 		#region Implicit Operators
 		/// <summary>
-		/// Converts a System.UnixTime to a System.Int64 value.
+		/// Converts a System.UnixTime to a System.Double value.
 		/// </summary>
 		/// <param name="value">An instance of System.UnixTime.</param>
 		/// <returns>A System.Double value.</returns>
@@ -141,11 +119,11 @@ namespace System
 		}
 
 		/// <summary>
-		/// Converts a System.Int64 to a System.UnixTime value.
+		/// Converts a System.Double to a System.UnixTime value.
 		/// </summary>
 		/// <param name="value">A System.Double value.</param>
 		/// <returns>An instance of System.UnixTime.</returns>
-		public static implicit operator UnixTime(double value)
+		public static explicit operator UnixTime(double value)
 		{
 			return new UnixTime(value);
 		}
@@ -165,7 +143,7 @@ namespace System
 		/// </summary>
 		/// <param name="value">A System.Int64 value.</param>
 		/// <returns>An instance of System.UnixTime.</returns>
-		public static implicit operator UnixTime(long value)
+		public static explicit operator UnixTime(long value)
 		{
 			return new UnixTime(value);
 		}
@@ -174,7 +152,7 @@ namespace System
 		/// Converts a System.UnixTime to a System.DateTime value.
 		/// </summary>
 		/// <param name="value">An instance of System.UnixTime.</param>
-		/// <returns>A System.Int64 value.</returns>
+		/// <returns>A System.DateTime value.</returns>
 		public static implicit operator DateTime(UnixTime value)
 		{
 			return value.DateTime;
@@ -183,7 +161,7 @@ namespace System
 		/// <summary>
 		/// Converts a System.DateTime to a System.UnixTime value.
 		/// </summary>
-		/// <param name="value">A System.Int64 value.</param>
+		/// <param name="value">A System.DateTime value.</param>
 		/// <returns>An instance of System.UnixTime.</returns>
 		public static implicit operator UnixTime(DateTime value)
 		{
@@ -217,12 +195,12 @@ namespace System
 
 		#region Public Overrides
 		/// <summary>
-		/// Returns the value as a fully formatted string.
+		/// Returns the Unix timestamp as a string using the invariant culture.
 		/// </summary>
-		/// <returns>A System.String value.</returns>
+		/// <returns>A System.String representation of the Unix timestamp.</returns>
 		public override string ToString()
 		{
-			return this.Timestamp.ToString();
+			return this.Timestamp.ToString(CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
@@ -266,20 +244,56 @@ namespace System
 		}
 
 		/// <summary>
-		/// Convert a System.DateTime value to a Unix Time.
+		/// Represents the smallest possible System.UnixTime value, corresponding to System.DateTime.MinValue in UTC.
 		/// </summary>
-		/// <param name="value">System.DateTime object.</param>
-		/// <returns>A 64-bit integer representing the Unix Time.</returns>
+		public static UnixTime MinValue
+		{
+			get
+			{
+				return new UnixTime(new DateTime(DateTime.MinValue.Ticks, DateTimeKind.Utc));
+			}
+		}
+
+		/// <summary>
+		/// Represents the largest possible System.UnixTime value, corresponding to System.DateTime.MaxValue in UTC.
+		/// </summary>
+		public static UnixTime MaxValue
+		{
+			get
+			{
+				return new UnixTime(new DateTime(DateTime.MaxValue.Ticks, DateTimeKind.Utc));
+			}
+		}
+
+		/// <summary>
+		/// Represents the Unix Epoch (January 1 1970, 00:00:00 UTC) as a System.UnixTime value with a timestamp of zero.
+		/// </summary>
+		public static UnixTime Zero
+		{
+			get
+			{
+				return new UnixTime(0D);
+			}
+		}
+
+		/// <summary>
+		/// Converts a System.DateTime value to a Unix timestamp.
+		/// </summary>
+		/// <param name="value">The System.DateTime value to convert. Must have DateTimeKind.Utc or DateTimeKind.Local.</param>
+		/// <returns>A 64-bit integer representing the Unix timestamp.</returns>
 		public static long FromDateTime(DateTime value)
 		{
 			long returnValue = 0;
 
 			DateTime internalValue = DateTime.MinValue;
 
-			if (value.Kind == DateTimeKind.Utc ||
-				value.Kind == DateTimeKind.Unspecified)
+			if (value.Kind == DateTimeKind.Utc)
 			{
 				internalValue = value;
+			}
+			else if (value.Kind == DateTimeKind.Unspecified)
+			{
+				throw new ArgumentException("Cannot convert a DateTime with DateTimeKind.Unspecified to UnixTime. Specify DateTimeKind.Utc or DateTimeKind.Local.", nameof(value));
 			}
 			else if (value.Kind == DateTimeKind.Local)
 			{
@@ -303,11 +317,10 @@ namespace System
 		}
 
 		/// <summary>
-		/// Converts a Unix Time to a System.DateTime object in
-		/// universal time.
+		/// Converts a Unix timestamp to a System.DateTime in UTC.
 		/// </summary>
-		/// <param name="value">A 64-bit integer representing the Unix Time.</param>
-		/// <returns>System.DateTime object.</returns>
+		/// <param name="value">A 64-bit integer representing the Unix timestamp.</param>
+		/// <returns>A System.DateTime in UTC.</returns>
 		public static DateTime ToUniversalDateTime(long value)
 		{
 			DateTime returnValue = DateTime.MinValue;
@@ -323,11 +336,10 @@ namespace System
 		}
 
 		/// <summary>
-		/// Converts a Unix Time to a System.DateTime object in
-		/// local time.
+		/// Converts a Unix timestamp to a System.DateTime in local time.
 		/// </summary>
-		/// <param name="value">A 64-bit integer representing the Unix Time.</param>
-		/// <returns>System.DateTime object.</returns>
+		/// <param name="value">A 64-bit integer representing the Unix timestamp.</param>
+		/// <returns>A System.DateTime in local time.</returns>
 		public static DateTime ToLocalDateTime(long value)
 		{
 			DateTime returnValue = DateTime.MinValue;
@@ -343,11 +355,10 @@ namespace System
 		}
 
 		/// <summary>
-		/// Converts a Unix Time to a System.DateTime object in
-		/// universal time.
+		/// Converts a Unix timestamp to a System.DateTime in UTC.
 		/// </summary>
-		/// <param name="value">A System.Double representing the Unix Time.</param>
-		/// <returns>System.DateTime object.</returns>
+		/// <param name="value">A System.Double representing the Unix timestamp.</param>
+		/// <returns>A System.DateTime in UTC.</returns>
 		public static DateTime ToUniversalDateTime(double value)
 		{
 			DateTime returnValue = DateTime.MinValue;
@@ -363,11 +374,10 @@ namespace System
 		}
 
 		/// <summary>
-		/// Converts a Unix Time to a System.DateTime object in
-		/// local time.
+		/// Converts a Unix timestamp to a System.DateTime in local time.
 		/// </summary>
-		/// <param name="value">A System.Double representing the Unix Time.</param>
-		/// <returns>System.DateTime object.</returns>
+		/// <param name="value">A System.Double representing the Unix timestamp.</param>
+		/// <returns>A System.DateTime in local time.</returns>
 		public static DateTime ToLocalDateTime(double value)
 		{
 			DateTime returnValue = DateTime.MinValue;
@@ -392,7 +402,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the addition of the first and second instance.</returns>
 		public static UnixTime operator +(UnixTime t1, UnixTime t2)
 		{
-			return t1.Timestamp + t2.Timestamp;
+			return new UnixTime(t1.Timestamp + t2.Timestamp);
 		}
 
 		/// <summary>
@@ -403,73 +413,119 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the difference between the the first and second instance.</returns>
 		public static UnixTime operator -(UnixTime t1, UnixTime t2)
 		{
-			return t1.Timestamp - t2.Timestamp;
+			return new UnixTime(t1.Timestamp - t2.Timestamp);
 		}
 
 		/// <summary>
-		/// Compares to instance of a Unix Time.
+		/// Determines whether two System.UnixTime instances are equal.
 		/// </summary>
 		/// <param name="t1">The first System.UnixTime instance.</param>
 		/// <param name="t2">The second System.UnixTime instance.</param>
-		/// <returns>Returns True if the two instances are the same, False otherwise.</returns>
+		/// <returns>True if the two instances are equal; False otherwise.</returns>
 		public static bool operator ==(UnixTime t1, UnixTime t2)
 		{
 			return t1.Timestamp == t2.Timestamp;
 		}
 
 		/// <summary>
-		/// Compares to instance of a Unix Time.
+		/// Determines whether two System.UnixTime instances are not equal.
 		/// </summary>
 		/// <param name="t1">The first System.UnixTime instance.</param>
 		/// <param name="t2">The second System.UnixTime instance.</param>
-		/// <returns>Returns False if the two instances are the same, True otherwise.</returns>
+		/// <returns>True if the two instances are not equal; False otherwise.</returns>
 		public static bool operator !=(UnixTime t1, UnixTime t2)
 		{
 			return t1.Timestamp != t2.Timestamp;
 		}
 
 		/// <summary>
-		/// Compares to instance of a Unix Time.
+		/// Determines whether one System.UnixTime instance is less than another.
 		/// </summary>
 		/// <param name="t1">The first System.UnixTime instance.</param>
 		/// <param name="t2">The second System.UnixTime instance.</param>
-		/// <returns>Returns True the first instance is greater than the second instance, False otherwise.</returns>
+		/// <returns>True if t1 is less than t2; False otherwise.</returns>
 		public static bool operator <(UnixTime t1, UnixTime t2)
 		{
 			return t1.Timestamp < t2.Timestamp;
 		}
 
 		/// <summary>
-		/// Compares to instance of a Unix Time.
+		/// Determines whether one System.UnixTime instance is less than or equal to another.
 		/// </summary>
 		/// <param name="t1">The first System.UnixTime instance.</param>
 		/// <param name="t2">The second System.UnixTime instance.</param>
-		/// <returns>Returns True the first instance is greater than or equal to the second instance, False otherwise.</returns>
+		/// <returns>True if t1 is less than or equal to t2; False otherwise.</returns>
 		public static bool operator <=(UnixTime t1, UnixTime t2)
 		{
 			return t1.Timestamp <= t2.Timestamp;
 		}
 
 		/// <summary>
-		/// Compares to instance of a Unix Time.
+		/// Determines whether one System.UnixTime instance is greater than another.
 		/// </summary>
 		/// <param name="t1">The first System.UnixTime instance.</param>
 		/// <param name="t2">The second System.UnixTime instance.</param>
-		/// <returns>Returns True the first instance is less than the second instance, False otherwise.</returns>
+		/// <returns>True if t1 is greater than t2; False otherwise.</returns>
 		public static bool operator >(UnixTime t1, UnixTime t2)
 		{
 			return t1.Timestamp > t2.Timestamp;
 		}
 
 		/// <summary>
-		/// Compares to instance of a Unix Time.
+		/// Determines whether one System.UnixTime instance is greater than or equal to another.
 		/// </summary>
 		/// <param name="t1">The first System.UnixTime instance.</param>
 		/// <param name="t2">The second System.UnixTime instance.</param>
-		/// <returns>Returns True the first instance is less than or equal to the second instance, False otherwise.</returns>
+		/// <returns>True if t1 is greater than or equal to t2; False otherwise.</returns>
 		public static bool operator >=(UnixTime t1, UnixTime t2)
 		{
 			return t1.Timestamp >= t2.Timestamp;
+		}
+		#endregion
+
+		#region UnixTime/Numeric Operators
+		/// <summary>
+		/// Adds a number of seconds to a System.UnixTime instance.
+		/// </summary>
+		/// <param name="t">The System.UnixTime instance.</param>
+		/// <param name="seconds">The number of seconds (as a 64-bit integer) to add.</param>
+		/// <returns>A new System.UnixTime instance offset by the specified number of seconds.</returns>
+		public static UnixTime operator +(UnixTime t, long seconds)
+		{
+			return new UnixTime(t.Timestamp + seconds);
+		}
+
+		/// <summary>
+		/// Subtracts a number of seconds from a System.UnixTime instance.
+		/// </summary>
+		/// <param name="t">The System.UnixTime instance.</param>
+		/// <param name="seconds">The number of seconds (as a 64-bit integer) to subtract.</param>
+		/// <returns>A new System.UnixTime instance offset by the specified number of seconds.</returns>
+		public static UnixTime operator -(UnixTime t, long seconds)
+		{
+			return new UnixTime(t.Timestamp - seconds);
+		}
+
+		/// <summary>
+		/// Adds a fractional number of seconds to a System.UnixTime instance.
+		/// </summary>
+		/// <param name="t">The System.UnixTime instance.</param>
+		/// <param name="seconds">The number of seconds (as a 64-bit floating-point number) to add.</param>
+		/// <returns>A new System.UnixTime instance offset by the specified number of seconds.</returns>
+		public static UnixTime operator +(UnixTime t, double seconds)
+		{
+			return new UnixTime(t.Timestamp + seconds);
+		}
+
+		/// <summary>
+		/// Subtracts a fractional number of seconds from a System.UnixTime instance.
+		/// </summary>
+		/// <param name="t">The System.UnixTime instance.</param>
+		/// <param name="seconds">The number of seconds (as a 64-bit floating-point number) to subtract.</param>
+		/// <returns>A new System.UnixTime instance offset by the specified number of seconds.</returns>
+		public static UnixTime operator -(UnixTime t, double seconds)
+		{
+			return new UnixTime(t.Timestamp - seconds);
 		}
 		#endregion
 
@@ -482,7 +538,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the addition of the System.UnixTime and the System.TimeSpan instances.</returns>
 		public static UnixTime operator +(UnixTime t1, TimeSpan t2)
 		{
-			return t1.Timestamp + (long)t2.TotalSeconds;
+			return new UnixTime(t1.Timestamp + (long)t2.TotalSeconds);
 		}
 
 		/// <summary>
@@ -493,7 +549,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the subtraction of the System.TimeSpan from the System.UnixTime instances.</returns>
 		public static UnixTime operator -(UnixTime t1, TimeSpan t2)
 		{
-			return t1.Timestamp - (long)t2.TotalSeconds;
+			return new UnixTime(t1.Timestamp - (long)t2.TotalSeconds);
 		}
 
 		/// <summary>
@@ -572,7 +628,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the addition of the System.TimeSpan and the System.UnixTime instances.</returns>
 		public static UnixTime operator +(TimeSpan t1, UnixTime t2)
 		{
-			return (long)t1.TotalSeconds + t2.Timestamp;
+			return new UnixTime((long)t1.TotalSeconds + t2.Timestamp);
 		}
 
 		/// <summary>
@@ -583,7 +639,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the subtraction of the System.UnixTime from the System.TimeSpan instances.</returns>
 		public static UnixTime operator -(TimeSpan t1, UnixTime t2)
 		{
-			return (long)t1.TotalSeconds - t2.Timestamp;
+			return new UnixTime((long)t1.TotalSeconds - t2.Timestamp);
 		}
 
 		/// <summary>
@@ -655,16 +711,13 @@ namespace System
 
 		#region IComparable
 		/// <summary>
-		/// Compares the current instance with another object of the same type and returns
-		/// an integer that indicates whether the current instance precedes, follows,
-		/// or occurs in the same position in the sort order as the other object.
+		/// Compares the current instance with another object and returns an integer indicating
+		/// their relative order in the sort sequence.
 		/// </summary>
 		/// <param name="obj">An object to compare with this instance.</param>
-		/// <returns>A value that indicates the relative order of the objects being compared.
-		/// The return value has these meanings: Value Meaning Less than zero This instance
-		/// precedes obj in the sort order. Zero This instance occurs in the same position
-		/// in the sort order as obj. Greater than zero This instance follows obj in
-		/// the sort order.</returns>
+		/// <returns>A signed integer indicating the relative order: negative if this instance
+		/// precedes obj, zero if they occupy the same position, or positive if this instance
+		/// follows obj in the sort order. Returns -1 if obj is not a System.UnixTime.</returns>
 		public int CompareTo(object obj)
 		{
 			int returnValue = -1;
@@ -680,28 +733,47 @@ namespace System
 
 		#region IFormattable
 		/// <summary>
-		/// Formats the value of the current instance using the specified format.
+		/// Formats the value of the current instance using the specified format string.
 		/// </summary>
-		/// <param name="format">The format to use.-or- A null reference (Nothing in Visual Basic) to use
-		/// the default format defined for the type of the System.IFormattable implementation.</param>
-		/// <returns> The value of the current instance in the specified format.</returns>
+		/// <param name="format">The format string to use, or null to use the default format.</param>
+		/// <returns>The value of the current instance in the specified format.</returns>
 		public string ToString(string format)
 		{
 			return this.DateTime.ToString(format);
 		}
 
 		/// <summary>
-		/// Formats the value of the current instance using the specified format.
+		/// Formats the value of the current instance using the specified format string and format provider.
 		/// </summary>
-		/// <param name="format">The format to use.-or- A null reference (Nothing in Visual Basic) to use
-		/// the default format defined for the type of the System.IFormattable implementation.</param>
-		/// <param name="formatProvider">The provider to use to format the value.-or- A null reference (Nothing in
-		/// Visual Basic) to obtain the numeric format information from the current locale
-		/// setting of the operating system.</param>
-		/// <returns> The value of the current instance in the specified format.</returns>
+		/// <param name="format">The format string to use, or null to use the default format.</param>
+		/// <param name="formatProvider">The format provider to use, or null to use the current locale.</param>
+		/// <returns>The value of the current instance in the specified format.</returns>
 		public string ToString(string format, IFormatProvider formatProvider)
 		{
 			return this.DateTime.ToString(format, formatProvider);
+		}
+		#endregion
+
+		#region ISpanFormattable
+		/// <summary>
+		/// Tries to format the value of the current instance into the provided span of characters.
+		/// When <paramref name="format"/> is empty, the raw numeric timestamp is written using the
+		/// invariant culture; otherwise the value is formatted as a local <see cref="DateTime"/> using
+		/// the supplied format string and <paramref name="provider"/>.
+		/// </summary>
+		/// <param name="destination">The span in which to write this instance's value formatted as a span of characters.</param>
+		/// <param name="charsWritten">When this method returns, contains the number of characters that were written in <paramref name="destination"/>.</param>
+		/// <param name="format">A span containing the characters that represent a standard or custom format string.</param>
+		/// <param name="provider">An optional object that supplies culture-specific formatting information.</param>
+		/// <returns>True if the formatting was successful; False if <paramref name="destination"/> was too short.</returns>
+		public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider)
+		{
+			if (format.IsEmpty)
+			{
+				return this.Timestamp.TryFormat(destination, out charsWritten, default, CultureInfo.InvariantCulture);
+			}
+
+			return this.DateTime.TryFormat(destination, out charsWritten, format, provider);
 		}
 		#endregion
 
@@ -734,7 +806,6 @@ namespace System
 		}
 		#endregion
 
-#if NET20 || NET35 || NET40 || NET45 || NET451
 		#region IConvertible
 		/// <summary>
 		/// Returns the System.TypeCode for this instance.
@@ -928,7 +999,7 @@ namespace System
 		/// <returns>An 32-bit unsigned integer equivalent to the value of this instance.</returns>
 		public uint ToUInt32(IFormatProvider provider)
 		{
-			return Convert.ToUInt32(this.Timestamp); throw new NotImplementedException();
+			return Convert.ToUInt32(this.Timestamp);
 		}
 
 		/// <summary>
@@ -944,21 +1015,6 @@ namespace System
 		}
 		#endregion
 
-		#region ISerializable
-		/// <summary>
-		/// Populates a System.Runtime.Serialization.SerializationInfo with the data
-		/// needed to serialize the target object.
-		/// </summary>
-		/// <param name="info">The System.Runtime.Serialization.SerializationInfo to populate with data.</param>
-		/// <param name="context">The destination (see System.Runtime.Serialization.StreamingContext) for this
-		/// serialization.</param>
-		public void GetObjectData(SerializationInfo info, StreamingContext context)
-		{
-			info.AddValue(MagicValues.PropertyName, this.Timestamp, typeof(double));
-		}
-		#endregion
-#endif
-
 		#region Parse
 		/// <summary>
 		/// Converts the specified string representation of a Unix time to its System.UnixTime
@@ -966,11 +1022,10 @@ namespace System
 		/// </summary>
 		/// <param name="s">A string containing a Unix time to convert.</param>
 		/// <param name="result">When this method returns, contains the System.UnixTime value equivalent to
-		/// the Unix time contained in s, if the conversion succeeded, or System.UnixTime.Epoch
-		/// if the conversion failed. The conversion fails if the s parameter is null,
-		/// is an empty string (""), or does not contain a valid string representation
-		/// of a Unix time. This parameter is passed uninitialized.</param>
-		/// <returns>True if the s parameter was converted successfully, False otherwise.</returns>
+		/// the Unix time contained in s, if the conversion succeeded, or System.UnixTime.Zero
+		/// if the conversion failed. The conversion fails if s is null, empty, or does not
+		/// contain a valid representation of a Unix time.</param>
+		/// <returns>True if s was converted successfully; False otherwise.</returns>
 		public static bool TryParse(string s, out UnixTime result)
 		{
 			bool returnValue = false;
@@ -980,17 +1035,17 @@ namespace System
 			TimeSpan value2 = TimeSpan.Zero;
 			double value3 = 0D;
 
-			if (DateTime.TryParse(s, out value1))
-			{
-				result = new UnixTime(value1);
-				returnValue = true;
-			}
-			else if (double.TryParse(s, out value3))
+			if (double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out value3))
 			{
 				result = new UnixTime(value3);
 				returnValue = true;
 			}
-			else if (TimeSpan.TryParse(s, out value2))
+			else if (DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out value1))
+			{
+				result = new UnixTime(value1);
+				returnValue = true;
+			}
+			else if (TimeSpan.TryParse(s, CultureInfo.InvariantCulture, out value2))
 			{
 				result = new UnixTime(value2.TotalSeconds);
 				returnValue = true;
@@ -1011,7 +1066,7 @@ namespace System
 
 			if (!UnixTime.TryParse(s, out returnValue))
 			{
-				throw new FormatException();
+				throw new FormatException($"The string '{s}' could not be parsed as a UnixTime value.");
 			}
 
 			return returnValue;
@@ -1026,6 +1081,112 @@ namespace System
 		{
 			UnixTime result = UnixTime.Epoch;
 			return UnixTime.TryParse(s, out result);
+		}
+		#endregion
+
+		#region IParsable<UnixTime> / ISpanParsable<UnixTime>
+		/// <summary>
+		/// Parses a string into a System.UnixTime value using the specified culture-specific format information.
+		/// </summary>
+		/// <param name="s">The string to parse.</param>
+		/// <param name="provider">An object that provides culture-specific formatting information.</param>
+		/// <returns>The parsed System.UnixTime value.</returns>
+		/// <exception cref="FormatException">Thrown when <paramref name="s"/> cannot be parsed as a System.UnixTime value.</exception>
+		public static UnixTime Parse(string s, IFormatProvider provider)
+		{
+			if (provider != null && UnixTime.TryParse(s, provider, out UnixTime providerResult))
+			{
+				return providerResult;
+			}
+
+			return UnixTime.Parse(s);
+		}
+
+		/// <summary>
+		/// Converts the specified string representation of a Unix time to its System.UnixTime
+		/// equivalent using the specified culture-specific format information, and returns a value
+		/// that indicates whether the conversion succeeded.
+		/// </summary>
+		/// <param name="s">A string containing a Unix time to convert.</param>
+		/// <param name="provider">An <see cref="IFormatProvider"/> that supplies culture-specific formatting information.</param>
+		/// <param name="result">When this method returns, contains the converted System.UnixTime value, or
+		/// System.UnixTime.Zero if the conversion failed.</param>
+		/// <returns>True if the s parameter was converted successfully; False otherwise.</returns>
+		public static bool TryParse(string s, IFormatProvider provider, out UnixTime result)
+		{
+			result = UnixTime.Zero;
+			DateTime value1 = UnixTime.Epoch;
+			TimeSpan value2 = TimeSpan.Zero;
+			double value3 = 0D;
+
+			if (double.TryParse(s, NumberStyles.Any, provider, out value3))
+			{
+				result = new UnixTime(value3);
+				return true;
+			}
+			else if (DateTime.TryParse(s, provider, DateTimeStyles.None, out value1))
+			{
+				result = new UnixTime(value1);
+				return true;
+			}
+			else if (TimeSpan.TryParse(s, provider, out value2))
+			{
+				result = new UnixTime(value2.TotalSeconds);
+				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// Parses a span of characters into a System.UnixTime value.
+		/// </summary>
+		/// <param name="s">The span of characters to parse.</param>
+		/// <param name="provider">An object that provides culture-specific formatting information.</param>
+		/// <returns>The parsed System.UnixTime value.</returns>
+		/// <exception cref="FormatException">Thrown when <paramref name="s"/> cannot be parsed as a System.UnixTime value.</exception>
+		public static UnixTime Parse(ReadOnlySpan<char> s, IFormatProvider provider)
+		{
+			if (UnixTime.TryParse(s, provider, out UnixTime result))
+			{
+				return result;
+			}
+
+			throw new FormatException($"The value '{s.ToString()}' could not be parsed as a UnixTime value.");
+		}
+
+		/// <summary>
+		/// Tries to parse a span of characters into a System.UnixTime value using the specified format provider.
+		/// </summary>
+		/// <param name="s">The span of characters to parse.</param>
+		/// <param name="provider">An object that provides culture-specific formatting information.</param>
+		/// <param name="result">When this method returns, contains the parsed System.UnixTime value, or
+		/// System.UnixTime.Zero if the conversion failed.</param>
+		/// <returns>True if the parse succeeded; False otherwise.</returns>
+		public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, out UnixTime result)
+		{
+			result = UnixTime.Zero;
+			DateTime value1;
+			TimeSpan value2;
+			double value3;
+
+			if (double.TryParse(s, NumberStyles.Any, provider, out value3))
+			{
+				result = new UnixTime(value3);
+				return true;
+			}
+			else if (DateTime.TryParse(s, provider, DateTimeStyles.None, out value1))
+			{
+				result = new UnixTime(value1);
+				return true;
+			}
+			else if (TimeSpan.TryParse(s, provider, out value2))
+			{
+				result = new UnixTime(value2.TotalSeconds);
+				return true;
+			}
+
+			return false;
 		}
 		#endregion
 	}
