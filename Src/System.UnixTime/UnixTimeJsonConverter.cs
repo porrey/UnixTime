@@ -48,7 +48,22 @@ namespace System
 
 			if (objectType == typeof(UnixTime))
 			{
-				returnValue = UnixTime.Parse((string)reader.Value);
+				// Newtonsoft.Json may have already parsed an ISO date string into a DateTime
+				// (its default DateParseHandling.DateTime behaviour). Handle that case directly
+				// so that timezone information is preserved.
+				if (reader.Value is DateTime dt)
+				{
+					// If Kind is Unspecified (e.g. the string had no timezone designator),
+					// treat it as UTC to stay consistent with the rest of the library.
+					DateTime utcDt = dt.Kind == DateTimeKind.Unspecified
+						? DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+						: dt;
+					returnValue = new UnixTime(utcDt);
+				}
+				else
+				{
+					returnValue = UnixTime.Parse(Convert.ToString(reader.Value));
+				}
 			}
 
 			return returnValue;

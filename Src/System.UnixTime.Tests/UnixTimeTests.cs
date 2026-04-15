@@ -55,7 +55,8 @@ namespace System.Tests
 		[TestCaseSource(nameof(Items))]
 		public void IntConstructorTest(TestDataItem data)
 		{
-			UnixTime target = new(data.UnixTimestampInt);
+			// Cast explicitly to int so the int overload is exercised, not the long overload.
+			UnixTime target = new((int)data.UnixTimestampInt);
 			Assert.That(target.DateTime.ToUniversalTime(), Is.EqualTo(data.DateTime));
 		}
 
