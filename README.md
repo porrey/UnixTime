@@ -208,8 +208,6 @@ All arithmetic operators return a new `UnixTime` instance.
 | `t - timespan` | Subtracts a `TimeSpan`. |
 | `timespan + t` | Adds a `UnixTime` to a `TimeSpan`. |
 | `timespan - t` | Subtracts a `UnixTime` from a `TimeSpan`. |
-| `t + datetime` | Adds a `DateTime` (as a `UnixTime`) to a `UnixTime`. |
-| `t - datetime` | Subtracts a `DateTime` (as a `UnixTime`) from a `UnixTime`. |
 
 ```csharp
 UnixTime t = new(1700000000L);
@@ -226,7 +224,6 @@ Full sets of comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`) are defined
 
 - `UnixTime` op `UnixTime`
 - `UnixTime` op `TimeSpan` (and `TimeSpan` op `UnixTime`)
-- `UnixTime` op `DateTime` (and `DateTime` op `UnixTime`)
 
 ```csharp
 UnixTime t1 = new(1000L);

@@ -16,13 +16,14 @@ UnixTime/
 │   ├── Unix-Time-Solution.sln       # Visual Studio solution file
 │   ├── System.UnixTime/             # Core library project (NuGet package)
 │   │   ├── System.UnixTime.csproj
-│   │   ├── UnixTime.cs              # Primary struct definition
-│   │   ├── DateTimeExtensions.cs    # Extension method: DateTime.ToUnixTime()
-│   │   ├── UnixTimeJsonConverter.cs # Newtonsoft.Json converter
-│   │   └── UnixTimeTypeConverter.cs # TypeConverter for legacy .NET targets
+│   │   ├── UnixTime.cs                        # Primary struct definition
+│   │   ├── DateTimeExtensions.cs              # Extension method: DateTime.ToUnixTime()
+│   │   ├── UnixTimeJsonConverter.cs           # Newtonsoft.Json converter
+│   │   ├── UnixTimeSystemTextJsonConverter.cs # System.Text.Json converter
+│   │   └── UnixTimeTypeConverter.cs           # TypeConverter for design-time support
 │   ├── System.UnixTime.Tests/       # NUnit unit-test project
 │   │   ├── System.UnixTime.Tests.csproj
-│   │   ├── UnixTimeTests.cs         # Test fixture (~600 lines, 2000-item data-driven)
+│   │   ├── UnixTimeTests.cs         # Test fixture (~1,000 lines, 2,000-item data-driven)
 │   │   ├── TestDataItem.cs          # Test data model
 │   │   └── TestDecorator.cs        # Assert2 helper shim
 │   └── Demo Console/                # Console application demonstrating the library
@@ -83,6 +84,9 @@ Storing the value as a `double` allows sub-second precision while remaining comp
 | Member | Description |
 |---|---|
 | `UnixTime.Epoch` | `DateTime` of `1970-01-01 00:00:00 UTC` |
+| `UnixTime.Zero` | `UnixTime` with a timestamp of `0` (same instant as `Epoch`) |
+| `UnixTime.MinValue` | Smallest representable value (corresponds to `DateTime.MinValue` in UTC) |
+| `UnixTime.MaxValue` | Largest representable value (corresponds to `DateTime.MaxValue` in UTC) |
 | `UnixTime.FromDateTime(DateTime)` | Converts a `DateTime` to a `long` Unix timestamp |
 | `UnixTime.ToUniversalDateTime(long/double)` | Timestamp → UTC `DateTime` |
 | `UnixTime.ToLocalDateTime(long/double)` | Timestamp → local `DateTime` |
@@ -104,8 +108,8 @@ Storing the value as a `double` allows sub-second precision while remaining comp
 Full sets of arithmetic (`+`, `-`) and comparison (`==`, `!=`, `<`, `<=`, `>`, `>=`) operators are defined for the following type pairs:
 
 - `UnixTime` op `UnixTime`
-- `UnixTime` op `long` / `long` op `UnixTime` (numeric second offset)
-- `UnixTime` op `double` / `double` op `UnixTime` (fractional second offset)
+- `UnixTime` op `long` (numeric second offset)
+- `UnixTime` op `double` (fractional second offset)
 - `UnixTime` op `TimeSpan` (and `TimeSpan` op `UnixTime`)
 
 ### Interface Implementations
@@ -116,8 +120,9 @@ Full sets of arithmetic (`+`, `-`) and comparison (`==`, `!=`, `<`, `<=`, `>`, `
 | `IComparable<UnixTime>` | Generic typed comparison |
 | `IEquatable<UnixTime>` | Typed equality |
 | `IFormattable` | `ToString(format)` / `ToString(format, culture)` delegate to `DateTime` |
-| `IConvertible` *(legacy)* | Only compiled for `NET20`–`NET451` targets |
-| `ISerializable` *(legacy)* | Binary serialization for `NET20`–`NET451` targets |
+| `ISpanFormattable` | Allocation-free `TryFormat` into a `Span<char>` |
+| `IConvertible` | Conversion to all BCL primitive types via `Convert` |
+| `ISpanParsable<UnixTime>` | Parsing from `ReadOnlySpan<char>` with an optional `IFormatProvider` |
 
 ---
 
@@ -136,9 +141,13 @@ long unixTs = myDateTime.ToUnixTime();
 
 A `Newtonsoft.Json.JsonConverter` subclass. It serializes a `UnixTime` as its numeric string representation and deserializes by calling `UnixTime.Parse()`. Decorate a property with `[JsonConverter(typeof(UnixTimeJsonConverter))]` to use it.
 
-### `UnixTimeTypeConverter` *(legacy)*
+### `UnixTimeSystemTextJsonConverter`
 
-A `System.ComponentModel.TypeConverter` compiled only for older .NET Framework targets (`NET20`–`NET451`). It delegates conversion logic through the `double` TypeConverter, enabling design-time support in WinForms and similar frameworks.
+A `System.Text.Json.JsonConverter<UnixTime>` for use with `System.Text.Json`. It writes a `UnixTime` as a JSON number (the raw Unix timestamp) and reads back either a JSON number or a JSON string (parsed via `UnixTime.TryParse`). Register it via `JsonSerializerOptions.Converters`.
+
+### `UnixTimeTypeConverter`
+
+A `System.ComponentModel.TypeConverter` that enables design-time and data-binding support (e.g. in WinForms property grids). It delegates conversion logic through the `double` TypeConverter.
 
 ---
 
@@ -147,7 +156,7 @@ A `System.ComponentModel.TypeConverter` compiled only for older .NET Framework t
 The test project targets **net10.0** and uses **NUnit 4** with the `NUnit3TestAdapter`.
 
 - **`TestDataItem`** generates a random `double` Unix timestamp and derives the corresponding `DateTime`, `long`, and `int` representations from it.
-- **`UnixTimeTests`** loads **2,000 random test-data items** at fixture startup and drives every constructor, property, implicit operator, arithmetic operator, comparison operator, and interface method with that data set.
+- **`UnixTimeTests`** loads **2,000 random test-data items** at fixture startup and drives every constructor, property, implicit operator, arithmetic operator, comparison operator, and interface method with that data set (~1,000 lines).
 - **`Assert2`** is a thin shim wrapping `Assert.That` in the NUnit 4 constraint model, used to provide a consistent assertion API across the test file.
 
 Coverage is collected by the **coverlet** collector during `dotnet test`.
@@ -192,9 +201,10 @@ Package publication is handled separately via `NuGet.Publish.cmd` (manual releas
 └─────────────────────────────────────────────┘
            │
            ▼
-┌───────────────────────────────┐
-│  Optional integrations        │
-│  • UnixTimeJsonConverter      │  (Newtonsoft.Json)
-│  • UnixTimeTypeConverter      │  (legacy .NET Framework)
-└───────────────────────────────┘
+┌───────────────────────────────────────┐
+│  Optional integrations                │
+│  • UnixTimeJsonConverter              │  (Newtonsoft.Json)
+│  • UnixTimeSystemTextJsonConverter    │  (System.Text.Json)
+│  • UnixTimeTypeConverter              │  (TypeConverter / design-time support)
+└───────────────────────────────────────┘
 ```
