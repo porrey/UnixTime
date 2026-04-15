@@ -1,7 +1,6 @@
-![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/porrey/UnixTime/.github/workflows/dotnet.yml?style=for-the-badge)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/porrey/UnixTime/.github%2Fworkflows%2Fdotnet.yml?style=for-the-badge&label=Build%20and%20Test) ![GitHub License](https://img.shields.io/github/license/porrey/UnixTime?style=for-the-badge) ![.NET](https://img.shields.io/badge/.NET-10-purple?style=for-the-badge)
 
-[![Nuget](https://img.shields.io/nuget/v/UnixTime?label=UnixTime%20-%20NuGet&style=for-the-badge)
-![Nuget](https://img.shields.io/nuget/dt/UnixTime?label=Downloads&style=for-the-badge)](https://www.nuget.org/packages/UnixTime/)
+[![Nuget](https://img.shields.io/nuget/v/UnixTime?label=UnixTime%20-%20NuGet&style=for-the-badge)![Nuget](https://img.shields.io/nuget/dt/UnixTime?label=Downloads&style=for-the-badge)](https://www.nuget.org/packages/UnixTime/)
 
 # UnixTime
 
