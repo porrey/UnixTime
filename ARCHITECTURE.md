@@ -88,22 +88,24 @@ Storing the value as a `double` allows sub-second precision while remaining comp
 | `UnixTime.ToLocalDateTime(long/double)` | Timestamp → local `DateTime` |
 | `UnixTime.Parse(string)` | Parses a numeric string, a date-time string, or a `TimeSpan` string |
 
-### Implicit Conversions
+### Conversions
 
-`UnixTime` can be assigned to/from all of the following without an explicit cast:
+`UnixTime` supports the following conversions:
 
-```
-UnixTime  ↔  double
-UnixTime  ↔  long
-UnixTime  ↔  DateTime
-UnixTime  ↔  TimeSpan
-```
+| Direction | long | double | DateTime | TimeSpan |
+|---|---|---|---|---|
+| `UnixTime` → target | **implicit** | **implicit** | **implicit** | **implicit** |
+| target → `UnixTime` | **explicit** `(UnixTime)x` | **explicit** `(UnixTime)x` | **implicit** | **implicit** |
+
+`long` and `double` to `UnixTime` are **explicit** (require a cast or `new UnixTime(x)`) to avoid operator ambiguity with the numeric offset operators introduced in C# 13 (`CS9342`). All other conversions remain implicit.
 
 ### Operator Overloads
 
 Full sets of arithmetic (`+`, `-`) and comparison (`==`, `!=`, `<`, `<=`, `>`, `>=`) operators are defined for the following type pairs:
 
 - `UnixTime` op `UnixTime`
+- `UnixTime` op `long` / `long` op `UnixTime` (numeric second offset)
+- `UnixTime` op `double` / `double` op `UnixTime` (fractional second offset)
 - `UnixTime` op `TimeSpan` (and `TimeSpan` op `UnixTime`)
 
 ### Interface Implementations
@@ -171,8 +173,10 @@ Package publication is handled separately via `NuGet.Publish.cmd` (manual releas
 │  Caller / Application        │
 │                              │
 │  UnixTime u = DateTime.Now;  │  ← implicit conversion
-│  long ts    = u;             │  ← implicit conversion
+│  long ts    = u;             │  ← implicit conversion (UnixTime→long)
 │  DateTime d = u;             │  ← implicit conversion
+│  UnixTime v = (UnixTime)ts;  │  ← explicit conversion (long→UnixTime)
+│  UnixTime w = u + 3600L;     │  ← numeric offset operator
 └──────────┬───────────────────┘
            │
            ▼
