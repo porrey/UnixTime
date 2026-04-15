@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program. If not, see http://www.gnu.org/licenses/.
 //
+using System.Globalization;
+
 namespace System
 {
 	/// <summary>
@@ -25,7 +27,7 @@ namespace System
 	[TypeConverter(typeof(UnixTimeTypeConverter))]
 	public struct UnixTime : IComparable, IFormattable, IConvertible, ISerializable, IComparable<UnixTime>, IEquatable<UnixTime>
 #else
-	public struct UnixTime : IComparable, IFormattable, IComparable<UnixTime>, IEquatable<UnixTime>
+	public struct UnixTime : IComparable, IFormattable, ISpanFormattable, IComparable<UnixTime>, IEquatable<UnixTime>, ISpanParsable<UnixTime>
 #endif
 	{
 		private double _timestamp;
@@ -262,6 +264,39 @@ namespace System
 			get
 			{
 				return new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+			}
+		}
+
+		/// <summary>
+		/// Represents the smallest possible System.UnixTime value, corresponding to System.DateTime.MinValue in UTC.
+		/// </summary>
+		public static UnixTime MinValue
+		{
+			get
+			{
+				return new UnixTime(new DateTime(DateTime.MinValue.Ticks, DateTimeKind.Utc));
+			}
+		}
+
+		/// <summary>
+		/// Represents the largest possible System.UnixTime value, corresponding to System.DateTime.MaxValue in UTC.
+		/// </summary>
+		public static UnixTime MaxValue
+		{
+			get
+			{
+				return new UnixTime(new DateTime(DateTime.MaxValue.Ticks, DateTimeKind.Utc));
+			}
+		}
+
+		/// <summary>
+		/// Represents the Unix Epoch (January 1 1970, 00:00:00 UTC) as a System.UnixTime value with a timestamp of zero.
+		/// </summary>
+		public static UnixTime Zero
+		{
+			get
+			{
+				return new UnixTime(0D);
 			}
 		}
 
@@ -705,6 +740,29 @@ namespace System
 		}
 		#endregion
 
+		#region ISpanFormattable
+		/// <summary>
+		/// Tries to format the value of the current instance into the provided span of characters.
+		/// When <paramref name="format"/> is empty, the raw numeric timestamp is written using the
+		/// invariant culture; otherwise the value is formatted as a local <see cref="DateTime"/> using
+		/// the supplied format string and <paramref name="provider"/>.
+		/// </summary>
+		/// <param name="destination">The span in which to write this instance's value formatted as a span of characters.</param>
+		/// <param name="charsWritten">When this method returns, contains the number of characters that were written in <paramref name="destination"/>.</param>
+		/// <param name="format">A span containing the characters that represent a standard or custom format string.</param>
+		/// <param name="provider">An optional object that supplies culture-specific formatting information.</param>
+		/// <returns>True if the formatting was successful; False if <paramref name="destination"/> was too short.</returns>
+		public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider)
+		{
+			if (format.IsEmpty)
+			{
+				return this.Timestamp.TryFormat(destination, out charsWritten, default, CultureInfo.InvariantCulture);
+			}
+
+			return this.DateTime.TryFormat(destination, out charsWritten, format, provider);
+		}
+		#endregion
+
 		#region IComparable<UnixTime>
 		/// <summary>
 		/// Compares the current object with another object of the same type.
@@ -928,7 +986,7 @@ namespace System
 		/// <returns>An 32-bit unsigned integer equivalent to the value of this instance.</returns>
 		public uint ToUInt32(IFormatProvider provider)
 		{
-			return Convert.ToUInt32(this.Timestamp); throw new NotImplementedException();
+			return Convert.ToUInt32(this.Timestamp);
 		}
 
 		/// <summary>
@@ -1011,7 +1069,7 @@ namespace System
 
 			if (!UnixTime.TryParse(s, out returnValue))
 			{
-				throw new FormatException();
+				throw new FormatException($"The string '{s}' could not be parsed as a UnixTime value.");
 			}
 
 			return returnValue;
@@ -1026,6 +1084,112 @@ namespace System
 		{
 			UnixTime result = UnixTime.Epoch;
 			return UnixTime.TryParse(s, out result);
+		}
+		#endregion
+
+		#region IParsable<UnixTime> / ISpanParsable<UnixTime>
+		/// <summary>
+		/// Parses a string into a System.UnixTime value using the specified culture-specific format information.
+		/// </summary>
+		/// <param name="s">The string to parse.</param>
+		/// <param name="provider">An object that provides culture-specific formatting information.</param>
+		/// <returns>The parsed System.UnixTime value.</returns>
+		/// <exception cref="FormatException">Thrown when <paramref name="s"/> cannot be parsed as a System.UnixTime value.</exception>
+		public static UnixTime Parse(string s, IFormatProvider provider)
+		{
+			if (provider != null && UnixTime.TryParse(s, provider, out UnixTime providerResult))
+			{
+				return providerResult;
+			}
+
+			return UnixTime.Parse(s);
+		}
+
+		/// <summary>
+		/// Converts the specified string representation of a Unix time to its System.UnixTime
+		/// equivalent using the specified culture-specific format information, and returns a value
+		/// that indicates whether the conversion succeeded.
+		/// </summary>
+		/// <param name="s">A string containing a Unix time to convert.</param>
+		/// <param name="provider">An <see cref="IFormatProvider"/> that supplies culture-specific formatting information.</param>
+		/// <param name="result">When this method returns, contains the converted System.UnixTime value, or
+		/// System.UnixTime.Zero if the conversion failed.</param>
+		/// <returns>True if the s parameter was converted successfully; False otherwise.</returns>
+		public static bool TryParse(string s, IFormatProvider provider, out UnixTime result)
+		{
+			result = UnixTime.Zero;
+			DateTime value1 = UnixTime.Epoch;
+			TimeSpan value2 = TimeSpan.Zero;
+			double value3 = 0D;
+
+			if (DateTime.TryParse(s, provider, Globalization.DateTimeStyles.None, out value1))
+			{
+				result = new UnixTime(value1);
+				return true;
+			}
+			else if (double.TryParse(s, Globalization.NumberStyles.Any, provider, out value3))
+			{
+				result = new UnixTime(value3);
+				return true;
+			}
+			else if (TimeSpan.TryParse(s, provider, out value2))
+			{
+				result = new UnixTime(value2.TotalSeconds);
+				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// Parses a span of characters into a System.UnixTime value.
+		/// </summary>
+		/// <param name="s">The span of characters to parse.</param>
+		/// <param name="provider">An object that provides culture-specific formatting information.</param>
+		/// <returns>The parsed System.UnixTime value.</returns>
+		/// <exception cref="FormatException">Thrown when <paramref name="s"/> cannot be parsed as a System.UnixTime value.</exception>
+		public static UnixTime Parse(ReadOnlySpan<char> s, IFormatProvider provider)
+		{
+			if (UnixTime.TryParse(s, provider, out UnixTime result))
+			{
+				return result;
+			}
+
+			throw new FormatException($"The value '{s.ToString()}' could not be parsed as a UnixTime value.");
+		}
+
+		/// <summary>
+		/// Tries to parse a span of characters into a System.UnixTime value using the specified format provider.
+		/// </summary>
+		/// <param name="s">The span of characters to parse.</param>
+		/// <param name="provider">An object that provides culture-specific formatting information.</param>
+		/// <param name="result">When this method returns, contains the parsed System.UnixTime value, or
+		/// System.UnixTime.Zero if the conversion failed.</param>
+		/// <returns>True if the parse succeeded; False otherwise.</returns>
+		public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, out UnixTime result)
+		{
+			result = UnixTime.Zero;
+			DateTime value1;
+			TimeSpan value2;
+			double value3;
+
+			if (DateTime.TryParse(s, provider, Globalization.DateTimeStyles.None, out value1))
+			{
+				result = new UnixTime(value1);
+				return true;
+			}
+			else if (double.TryParse(s, Globalization.NumberStyles.Any, provider, out value3))
+			{
+				result = new UnixTime(value3);
+				return true;
+			}
+			else if (TimeSpan.TryParse(s, provider, out value2))
+			{
+				result = new UnixTime(value2.TotalSeconds);
+				return true;
+			}
+
+			return false;
 		}
 		#endregion
 	}

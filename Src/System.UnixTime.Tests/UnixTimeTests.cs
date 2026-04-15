@@ -15,6 +15,7 @@
 // along with this program. If not, see http://www.gnu.org/licenses/.
 //
 using System.Globalization;
+using System.Text.Json;
 using NUnit.Framework;
 
 namespace System.Tests
@@ -618,6 +619,268 @@ namespace System.Tests
 			UnixTime target2 = new(data.DateTime);
 
 			Assert.That(target1, Is.Not.EqualTo(target2));
+		}
+		#endregion
+
+		#region Static Boundary Property Tests
+		[Test]
+		public void ZeroPropertyTest()
+		{
+			Assert.That(UnixTime.Zero.Timestamp, Is.EqualTo(0D));
+		}
+
+		[Test]
+		public void MinValuePropertyTest()
+		{
+			Assert.That(UnixTime.MinValue.DateTimeUtc, Is.EqualTo(new DateTime(DateTime.MinValue.Ticks, DateTimeKind.Utc)));
+		}
+
+		[Test]
+		public void MaxValuePropertyTest()
+		{
+			// DateTime.MaxValue sub-second precision is lost through integer-second conversion; verify the
+			// timestamp is within 1 second of the expected boundary rather than round-tripping via DateTimeUtc.
+			double expectedSeconds = (new DateTime(DateTime.MaxValue.Ticks, DateTimeKind.Utc) - UnixTime.Epoch).TotalSeconds;
+			Assert.That(UnixTime.MaxValue.Timestamp, Is.EqualTo(expectedSeconds).Within(1));
+		}
+
+		[Test]
+		public void MinValueLessThanMaxValueTest()
+		{
+			Assert.That(UnixTime.MinValue < UnixTime.MaxValue, Is.True);
+		}
+
+		[Test]
+		public void ZeroBetweenMinAndMaxTest()
+		{
+			Assert.Multiple(() =>
+			{
+				Assert.That(UnixTime.Zero > UnixTime.MinValue, Is.True);
+				Assert.That(UnixTime.Zero < UnixTime.MaxValue, Is.True);
+			});
+		}
+		#endregion
+
+		#region ISpanFormattable Tests
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void TryFormatNoFormatTest(TestDataItem data)
+		{
+			UnixTime target = new(data.UnixTimestampDouble);
+			Span<char> buffer = stackalloc char[64];
+			bool success = target.TryFormat(buffer, out int charsWritten, default, null);
+
+			Assert.That(success, Is.True);
+			Assert.That(double.Parse(buffer[..charsWritten].ToString(), CultureInfo.InvariantCulture), Is.EqualTo(data.UnixTimestampDouble).Within(1e-9));
+		}
+
+		[Test]
+		[TestCaseSource(nameof(Items))]
+		public void TryFormatWithFormatTest(TestDataItem data)
+		{
+			UnixTime target = new(data.UnixTimestampDouble);
+			Span<char> buffer = stackalloc char[128];
+			ReadOnlySpan<char> format = "o".AsSpan();
+			CultureInfo culture = CultureInfo.InvariantCulture;
+			bool success = target.TryFormat(buffer, out int charsWritten, format, culture);
+
+			Assert.That(success, Is.True);
+			Assert.That(buffer[..charsWritten].ToString(), Is.EqualTo(target.DateTime.ToString("o", culture)));
+		}
+
+		[Test]
+		public void TryFormatBufferTooSmallTest()
+		{
+			UnixTime target = new(1_700_000_000D);
+			Span<char> tinyBuffer = stackalloc char[2];
+
+			bool success = target.TryFormat(tinyBuffer, out _, default, null);
+
+			Assert.That(success, Is.False);
+		}
+		#endregion
+
+		#region TryParse with IFormatProvider Tests
+		[Test]
+		public void TryParseWithProviderNumericTest()
+		{
+			string s = "1700000000";
+			bool success = UnixTime.TryParse(s, CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+			});
+		}
+
+		[Test]
+		public void TryParseWithProviderDateStringTest()
+		{
+			string s = "2023-11-14T22:13:20Z";
+			bool success = UnixTime.TryParse(s, CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D).Within(1));
+			});
+		}
+
+		[Test]
+		public void TryParseWithProviderInvalidTest()
+		{
+			bool success = UnixTime.TryParse("not-a-time", CultureInfo.InvariantCulture, out _);
+			Assert.That(success, Is.False);
+		}
+		#endregion
+
+		#region IParsable<UnixTime> Tests
+		[Test]
+		public void IParsableParseNumericTest()
+		{
+			UnixTime result = UnixTime.Parse("1700000000", CultureInfo.InvariantCulture);
+
+			Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+		}
+
+		[Test]
+		public void IParsableTryParseNumericTest()
+		{
+			bool success = UnixTime.TryParse("1700000000", CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+			});
+		}
+
+		[Test]
+		public void IParsableTryParseInvalidTest()
+		{
+			bool success = UnixTime.TryParse("not-a-time", CultureInfo.InvariantCulture, out _);
+			Assert.That(success, Is.False);
+		}
+		#endregion
+
+		#region ISpanParsable<UnixTime> Tests
+		[Test]
+		public void ISpanParsableTryParseNumericTest()
+		{
+			bool success = UnixTime.TryParse("1700000000".AsSpan(), CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+			});
+		}
+
+		[Test]
+		public void ISpanParsableTryParseDateStringTest()
+		{
+			bool success = UnixTime.TryParse("2023-11-14T22:13:20Z".AsSpan(), CultureInfo.InvariantCulture, out UnixTime result);
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(success, Is.True);
+				Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D).Within(1));
+			});
+		}
+
+		[Test]
+		public void ISpanParsableTryParseInvalidTest()
+		{
+			bool success = UnixTime.TryParse("not-a-time".AsSpan(), null, out _);
+			Assert.That(success, Is.False);
+		}
+
+		[Test]
+		public void ISpanParsableParseThrowsOnInvalidTest()
+		{
+			Assert.That(() => UnixTime.Parse("not-a-time".AsSpan(), null), Throws.TypeOf<FormatException>());
+		}
+		#endregion
+
+		#region Parse FormatException Message Test
+		[Test]
+		public void ParseThrowsDescriptiveFormatExceptionTest()
+		{
+			string badInput = "definitely-not-parseable-xyz";
+			FormatException ex = Assert.Throws<FormatException>(() => UnixTime.Parse(badInput));
+			Assert.That(ex.Message, Does.Contain(badInput));
+		}
+		#endregion
+
+		#region UnixTimeSystemTextJsonConverter Tests
+		[Test]
+		public void SystemTextJsonConverterWritesNumberTest()
+		{
+			UnixTime value = new(1_700_000_000D);
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			string json = JsonSerializer.Serialize(value, options);
+
+			Assert.That(json, Is.EqualTo("1700000000"));
+		}
+
+		[Test]
+		public void SystemTextJsonConverterReadsNumberTest()
+		{
+			string json = "1700000000";
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			UnixTime result = JsonSerializer.Deserialize<UnixTime>(json, options);
+
+			Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D));
+		}
+
+		[Test]
+		public void SystemTextJsonConverterReadsStringTest()
+		{
+			string json = "\"2023-11-14T22:13:20Z\"";
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			UnixTime result = JsonSerializer.Deserialize<UnixTime>(json, options);
+
+			Assert.That(result.Timestamp, Is.EqualTo(1_700_000_000D).Within(1));
+		}
+
+		[Test]
+		public void SystemTextJsonConverterRoundTripTest()
+		{
+			UnixTime original = new(1_700_000_000D);
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			string json = JsonSerializer.Serialize(original, options);
+			UnixTime deserialized = JsonSerializer.Deserialize<UnixTime>(json, options);
+
+			Assert.That(deserialized.Timestamp, Is.EqualTo(original.Timestamp));
+		}
+
+		[Test]
+		public void SystemTextJsonConverterThrowsOnInvalidStringTest()
+		{
+			string json = "\"not-a-unixtime-xyz\"";
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			Assert.That(() => JsonSerializer.Deserialize<UnixTime>(json, options), Throws.TypeOf<JsonException>());
+		}
+
+		[Test]
+		public void SystemTextJsonConverterThrowsOnBooleanTokenTest()
+		{
+			string json = "true";
+			var options = new JsonSerializerOptions();
+			options.Converters.Add(new UnixTimeSystemTextJsonConverter());
+
+			Assert.That(() => JsonSerializer.Deserialize<UnixTime>(json, options), Throws.TypeOf<JsonException>());
 		}
 		#endregion
 	}
