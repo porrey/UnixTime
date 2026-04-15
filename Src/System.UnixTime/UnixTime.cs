@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program. If not, see http://www.gnu.org/licenses/.
 //
+using System.ComponentModel;
 using System.Globalization;
 
 namespace System
@@ -22,20 +23,10 @@ namespace System
 	/// Unix time is simply a count of seconds that have elapsed since 
 	/// January 1 1970, 00:00:00 UTC (the Unix Epoch), 
 	/// </summary>
-#if NET20 || NET35 || NET40 || NET45 || NET451
-	[Serializable]
 	[TypeConverter(typeof(UnixTimeTypeConverter))]
-	public struct UnixTime : IComparable, IFormattable, IConvertible, ISerializable, IComparable<UnixTime>, IEquatable<UnixTime>
-#else
-	public struct UnixTime : IComparable, IFormattable, ISpanFormattable, IComparable<UnixTime>, IEquatable<UnixTime>, ISpanParsable<UnixTime>
-#endif
+	public struct UnixTime : IComparable, IFormattable, ISpanFormattable, IConvertible, IComparable<UnixTime>, IEquatable<UnixTime>, ISpanParsable<UnixTime>
 	{
 		private double _timestamp;
-
-		private static class MagicValues
-		{
-			public const string PropertyName = "Timestamp";
-		}
 
 		#region Constructors
 		/// <summary>
@@ -77,17 +68,6 @@ namespace System
 			this._timestamp = UnixTime.FromDateTime(datetime);
 		}
 
-#if NET20 || NET35 || NET40 || NET45 || NET451
-		/// <summary>
-		/// Constructs an instance of System.UnixTime from serialized information.
-		/// </summary>
-		/// <param name="info"></param>
-		/// <param name="context"></param>
-		public UnixTime(SerializationInfo info, StreamingContext context)
-		{
-			_timestamp = (double)info.GetValue(MagicValues.PropertyName, typeof(string));
-		}
-#endif
 		#endregion
 
 		#region Public Members
@@ -841,7 +821,6 @@ namespace System
 		}
 		#endregion
 
-#if NET20 || NET35 || NET40 || NET45 || NET451
 		#region IConvertible
 		/// <summary>
 		/// Returns the System.TypeCode for this instance.
@@ -1050,21 +1029,6 @@ namespace System
 			return Convert.ToUInt64(this.Timestamp);
 		}
 		#endregion
-
-		#region ISerializable
-		/// <summary>
-		/// Populates a System.Runtime.Serialization.SerializationInfo with the data
-		/// needed to serialize the target object.
-		/// </summary>
-		/// <param name="info">The System.Runtime.Serialization.SerializationInfo to populate with data.</param>
-		/// <param name="context">The destination (see System.Runtime.Serialization.StreamingContext) for this
-		/// serialization.</param>
-		public void GetObjectData(SerializationInfo info, StreamingContext context)
-		{
-			info.AddValue(MagicValues.PropertyName, this.Timestamp, typeof(double));
-		}
-		#endregion
-#endif
 
 		#region Parse
 		/// <summary>

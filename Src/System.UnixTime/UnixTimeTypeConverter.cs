@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program. If not, see http://www.gnu.org/licenses/.
 //
-#if NET20 || NET35 || NET40 || NET45 || NET451
 using System.ComponentModel;
 using System.Globalization;
 
@@ -83,4 +82,3 @@ namespace System
 		}
 	}
 }
-#endif
