@@ -43,7 +43,7 @@ namespace System
 
 			if (reader.TokenType == JsonTokenType.String)
 			{
-				string s = reader.GetString();
+				string s = reader.GetString() ?? string.Empty;
 
 				if (UnixTime.TryParse(s, out UnixTime result))
 				{

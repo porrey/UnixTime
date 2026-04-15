@@ -1122,12 +1122,12 @@ namespace System
 			TimeSpan value2 = TimeSpan.Zero;
 			double value3 = 0D;
 
-			if (DateTime.TryParse(s, provider, Globalization.DateTimeStyles.None, out value1))
+			if (DateTime.TryParse(s, provider, DateTimeStyles.None, out value1))
 			{
 				result = new UnixTime(value1);
 				return true;
 			}
-			else if (double.TryParse(s, Globalization.NumberStyles.Any, provider, out value3))
+			else if (double.TryParse(s, NumberStyles.Any, provider, out value3))
 			{
 				result = new UnixTime(value3);
 				return true;
@@ -1173,12 +1173,12 @@ namespace System
 			TimeSpan value2;
 			double value3;
 
-			if (DateTime.TryParse(s, provider, Globalization.DateTimeStyles.None, out value1))
+			if (DateTime.TryParse(s, provider, DateTimeStyles.None, out value1))
 			{
 				result = new UnixTime(value1);
 				return true;
 			}
-			else if (double.TryParse(s, Globalization.NumberStyles.Any, provider, out value3))
+			else if (double.TryParse(s, NumberStyles.Any, provider, out value3))
 			{
 				result = new UnixTime(value3);
 				return true;
