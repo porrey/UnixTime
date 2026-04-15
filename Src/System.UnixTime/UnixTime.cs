@@ -147,7 +147,7 @@ namespace System
 		/// </summary>
 		/// <param name="value">A System.Double value.</param>
 		/// <returns>An instance of System.UnixTime.</returns>
-		public static implicit operator UnixTime(double value)
+		public static explicit operator UnixTime(double value)
 		{
 			return new UnixTime(value);
 		}
@@ -167,7 +167,7 @@ namespace System
 		/// </summary>
 		/// <param name="value">A System.Int64 value.</param>
 		/// <returns>An instance of System.UnixTime.</returns>
-		public static implicit operator UnixTime(long value)
+		public static explicit operator UnixTime(long value)
 		{
 			return new UnixTime(value);
 		}
@@ -224,7 +224,7 @@ namespace System
 		/// <returns>A System.String value.</returns>
 		public override string ToString()
 		{
-			return this.Timestamp.ToString();
+			return this.Timestamp.ToString(CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
@@ -311,10 +311,13 @@ namespace System
 
 			DateTime internalValue = DateTime.MinValue;
 
-			if (value.Kind == DateTimeKind.Utc ||
-				value.Kind == DateTimeKind.Unspecified)
+			if (value.Kind == DateTimeKind.Utc)
 			{
 				internalValue = value;
+			}
+			else if (value.Kind == DateTimeKind.Unspecified)
+			{
+				throw new ArgumentException("Cannot convert a DateTime with DateTimeKind.Unspecified to UnixTime. Specify DateTimeKind.Utc or DateTimeKind.Local.", nameof(value));
 			}
 			else if (value.Kind == DateTimeKind.Local)
 			{
@@ -427,7 +430,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the addition of the first and second instance.</returns>
 		public static UnixTime operator +(UnixTime t1, UnixTime t2)
 		{
-			return t1.Timestamp + t2.Timestamp;
+			return new UnixTime(t1.Timestamp + t2.Timestamp);
 		}
 
 		/// <summary>
@@ -438,7 +441,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the difference between the the first and second instance.</returns>
 		public static UnixTime operator -(UnixTime t1, UnixTime t2)
 		{
-			return t1.Timestamp - t2.Timestamp;
+			return new UnixTime(t1.Timestamp - t2.Timestamp);
 		}
 
 		/// <summary>
@@ -508,6 +511,52 @@ namespace System
 		}
 		#endregion
 
+		#region UnixTime/Numeric Operators
+		/// <summary>
+		/// Adds a number of seconds to a System.UnixTime instance.
+		/// </summary>
+		/// <param name="t">The System.UnixTime instance.</param>
+		/// <param name="seconds">The number of seconds (as a 64-bit integer) to add.</param>
+		/// <returns>A new System.UnixTime instance offset by the specified number of seconds.</returns>
+		public static UnixTime operator +(UnixTime t, long seconds)
+		{
+			return new UnixTime(t.Timestamp + seconds);
+		}
+
+		/// <summary>
+		/// Subtracts a number of seconds from a System.UnixTime instance.
+		/// </summary>
+		/// <param name="t">The System.UnixTime instance.</param>
+		/// <param name="seconds">The number of seconds (as a 64-bit integer) to subtract.</param>
+		/// <returns>A new System.UnixTime instance offset by the specified number of seconds.</returns>
+		public static UnixTime operator -(UnixTime t, long seconds)
+		{
+			return new UnixTime(t.Timestamp - seconds);
+		}
+
+		/// <summary>
+		/// Adds a fractional number of seconds to a System.UnixTime instance.
+		/// </summary>
+		/// <param name="t">The System.UnixTime instance.</param>
+		/// <param name="seconds">The number of seconds (as a 64-bit floating-point number) to add.</param>
+		/// <returns>A new System.UnixTime instance offset by the specified number of seconds.</returns>
+		public static UnixTime operator +(UnixTime t, double seconds)
+		{
+			return new UnixTime(t.Timestamp + seconds);
+		}
+
+		/// <summary>
+		/// Subtracts a fractional number of seconds from a System.UnixTime instance.
+		/// </summary>
+		/// <param name="t">The System.UnixTime instance.</param>
+		/// <param name="seconds">The number of seconds (as a 64-bit floating-point number) to subtract.</param>
+		/// <returns>A new System.UnixTime instance offset by the specified number of seconds.</returns>
+		public static UnixTime operator -(UnixTime t, double seconds)
+		{
+			return new UnixTime(t.Timestamp - seconds);
+		}
+		#endregion
+
 		#region UnixTime/TimeSpan Operators
 		/// <summary>
 		/// Adds an instance of System.TimeSpan to an instance of System.UnixTime.
@@ -517,7 +566,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the addition of the System.UnixTime and the System.TimeSpan instances.</returns>
 		public static UnixTime operator +(UnixTime t1, TimeSpan t2)
 		{
-			return t1.Timestamp + (long)t2.TotalSeconds;
+			return new UnixTime(t1.Timestamp + (long)t2.TotalSeconds);
 		}
 
 		/// <summary>
@@ -528,7 +577,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the subtraction of the System.TimeSpan from the System.UnixTime instances.</returns>
 		public static UnixTime operator -(UnixTime t1, TimeSpan t2)
 		{
-			return t1.Timestamp - (long)t2.TotalSeconds;
+			return new UnixTime(t1.Timestamp - (long)t2.TotalSeconds);
 		}
 
 		/// <summary>
@@ -607,7 +656,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the addition of the System.TimeSpan and the System.UnixTime instances.</returns>
 		public static UnixTime operator +(TimeSpan t1, UnixTime t2)
 		{
-			return (long)t1.TotalSeconds + t2.Timestamp;
+			return new UnixTime((long)t1.TotalSeconds + t2.Timestamp);
 		}
 
 		/// <summary>
@@ -618,7 +667,7 @@ namespace System
 		/// <returns>A System.UnixTime instance representing the subtraction of the System.UnixTime from the System.TimeSpan instances.</returns>
 		public static UnixTime operator -(TimeSpan t1, UnixTime t2)
 		{
-			return (long)t1.TotalSeconds - t2.Timestamp;
+			return new UnixTime((long)t1.TotalSeconds - t2.Timestamp);
 		}
 
 		/// <summary>
@@ -1038,17 +1087,17 @@ namespace System
 			TimeSpan value2 = TimeSpan.Zero;
 			double value3 = 0D;
 
-			if (DateTime.TryParse(s, out value1))
-			{
-				result = new UnixTime(value1);
-				returnValue = true;
-			}
-			else if (double.TryParse(s, out value3))
+			if (double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out value3))
 			{
 				result = new UnixTime(value3);
 				returnValue = true;
 			}
-			else if (TimeSpan.TryParse(s, out value2))
+			else if (DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out value1))
+			{
+				result = new UnixTime(value1);
+				returnValue = true;
+			}
+			else if (TimeSpan.TryParse(s, CultureInfo.InvariantCulture, out value2))
 			{
 				result = new UnixTime(value2.TotalSeconds);
 				returnValue = true;
@@ -1122,14 +1171,14 @@ namespace System
 			TimeSpan value2 = TimeSpan.Zero;
 			double value3 = 0D;
 
-			if (DateTime.TryParse(s, provider, DateTimeStyles.None, out value1))
-			{
-				result = new UnixTime(value1);
-				return true;
-			}
-			else if (double.TryParse(s, NumberStyles.Any, provider, out value3))
+			if (double.TryParse(s, NumberStyles.Any, provider, out value3))
 			{
 				result = new UnixTime(value3);
+				return true;
+			}
+			else if (DateTime.TryParse(s, provider, DateTimeStyles.None, out value1))
+			{
+				result = new UnixTime(value1);
 				return true;
 			}
 			else if (TimeSpan.TryParse(s, provider, out value2))
@@ -1173,14 +1222,14 @@ namespace System
 			TimeSpan value2;
 			double value3;
 
-			if (DateTime.TryParse(s, provider, DateTimeStyles.None, out value1))
-			{
-				result = new UnixTime(value1);
-				return true;
-			}
-			else if (double.TryParse(s, NumberStyles.Any, provider, out value3))
+			if (double.TryParse(s, NumberStyles.Any, provider, out value3))
 			{
 				result = new UnixTime(value3);
+				return true;
+			}
+			else if (DateTime.TryParse(s, provider, DateTimeStyles.None, out value1))
+			{
+				result = new UnixTime(value1);
 				return true;
 			}
 			else if (TimeSpan.TryParse(s, provider, out value2))

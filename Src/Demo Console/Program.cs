@@ -70,7 +70,7 @@ namespace Demo_Console
 			//
 			DateTime d4 = u2;
 			long l2 = u2;
-			UnixTime u4 = 1204343210;
+			UnixTime u4 = new(1204343210);
 			UnixTime u5 = DateTime.Now;
 
 			//
