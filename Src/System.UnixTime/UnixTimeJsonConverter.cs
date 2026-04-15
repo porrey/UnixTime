@@ -19,8 +19,7 @@ using Newtonsoft.Json;
 namespace System
 {
 	/// <summary>
-	/// Handles conversion of the Time object when using the 
-	/// Newtonsoft.Json library.
+	/// Handles JSON serialization and deserialization of System.UnixTime values when using Newtonsoft.Json.
 	/// </summary>
 	public class UnixTimeJsonConverter : JsonConverter
 	{
@@ -35,7 +34,10 @@ namespace System
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether this System.UnixTimeJsonConverter can read JSON.
+		/// Reads a JSON value and converts it to a System.UnixTime instance.
+		/// If Newtonsoft.Json has pre-parsed the value as a System.DateTime (its default
+		/// DateParseHandling behaviour), it is converted directly; otherwise the raw string
+		/// is parsed via <see cref="UnixTime.Parse(string)"/>.
 		/// </summary>
 		/// <param name="reader">The Newtonsoft.Json.JsonReader to read from.</param>
 		/// <param name="objectType">Type of the object.</param>

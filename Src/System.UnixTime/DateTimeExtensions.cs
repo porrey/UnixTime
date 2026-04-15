@@ -17,15 +17,15 @@
 namespace System
 {
 	/// <summary>
-	/// Provides extension methods for Sysem.DateTime to work with System.UnixTime
+	/// Provides extension methods for System.DateTime to work with System.UnixTime.
 	/// </summary>
 	public static class DateTimeExtensions
 	{
 		/// <summary>
-		/// Convert a System.DateTime value to a Unix Time.
+		/// Converts a System.DateTime value to a Unix timestamp.
 		/// </summary>
-		/// <param name="value">System.DateTime object.</param>
-		/// <returns>A 64-bit integer representing the Unix Time.</returns>
+		/// <param name="value">The System.DateTime value to convert.</param>
+		/// <returns>A 64-bit integer representing the Unix timestamp.</returns>
 		public static long ToUnixTime(this DateTime value)
 		{
 			return UnixTime.FromDateTime(value);
