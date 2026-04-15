@@ -400,9 +400,68 @@ Console.WriteLine($"Max supported: {maxDate.DateTimeUtc:u}");
 
 ## Version History
 
-### 10.1.0
+### 2.0.0 — August 2023
 
-This release introduces four **breaking changes** for correctness and C# 13 compatibility. See the migration notes below if upgrading from 10.0.x.
+Initial public release.
+
+- `UnixTime` struct with `long`, `int`, `double`, and `DateTime` constructors
+- `Timestamp`, `DateTime` (local), and `DateTimeUtc` properties
+- `Epoch` static property (`1970-01-01 00:00:00 UTC`)
+- `FromDateTime`, `ToUniversalDateTime`, and `ToLocalDateTime` static helpers
+- `Parse` / `TryParse` (attempted `DateTime` first, then numeric, then `TimeSpan`)
+- `DateTimeExtensions.ToUnixTime()` extension method
+- `UnixTimeJsonConverter` for Newtonsoft.Json serialization
+- `UnixTimeTypeConverter` for component-model type conversion
+- `long → UnixTime` and `double → UnixTime` conversions were **implicit**
+- `DateTimeKind.Unspecified` was silently treated as UTC
+- `ToString()` used locale-sensitive numeric formatting
+- Target frameworks: `netstandard2.1`, `net6.0`, `net7.0`
+- Legacy `#if NET20/35/40/45/451` conditional compilation blocks provided `ISerializable`, `IConvertible`, and `[Serializable]` for old .NET Framework targets
+
+---
+
+### 8.0.0 — November 2023
+
+- Re-targeted from `netstandard2.1;net6.0;net7.0` to `net8.0` exclusively, dropping .NET Standard 2.1 and .NET 6/7 support
+- No API changes
+
+---
+
+### 8.0.1 — September 2024
+
+- Updated NuGet dependency versions (no API changes)
+
+---
+
+### 9.0.0 — November 2024
+
+- Re-targeted from `net8.0` to `net9.0`
+- No API changes
+
+---
+
+### 10.0.0 — November 2025
+
+- Re-targeted from `net9.0` to `net10.0`
+- Updated NuGet package references
+- No API changes
+
+---
+
+### 10.1.0 — April 2026
+
+This release introduces four **breaking changes** for correctness and C# 13 compatibility, as well as several new features. See the migration notes below if upgrading from 10.0.x.
+
+#### New Features
+
+- **`UnixTime.Zero`** — static property returning a `UnixTime` with `Timestamp == 0` (same instant as `Epoch`)
+- **`UnixTime.MinValue`** / **`UnixTime.MaxValue`** — boundary sentinels mapping to `DateTime.MinValue` / `DateTime.MaxValue` in UTC
+- **`ISpanFormattable`** — `TryFormat(Span<char>, ...)` for allocation-free formatting
+- **`ISpanParsable<UnixTime>`** — `Parse` and `TryParse` overloads accepting `ReadOnlySpan<char>`
+- **`UnixTimeSystemTextJsonConverter`** — new `System.Text.Json` converter (reads/writes `UnixTime` as a JSON number; also accepts JSON strings)
+- **`IConvertible`** — now unconditionally implemented (previously only for legacy .NET Framework targets)
+- **`UnixTime op long` / `UnixTime op double` arithmetic operators** (`+` and `-`) — new overloads that make numeric offset arithmetic unambiguous without requiring explicit conversions
+- Removed all legacy `#if NET20/35/40/45/451` conditional compilation blocks; `ISerializable` and the legacy serialization constructor are no longer present
 
 #### Breaking Change — Explicit `long → UnixTime` and `double → UnixTime` conversions
 
